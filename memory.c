@@ -35,12 +35,12 @@ void *pop() {
 // ----------------------------------------------------------------------------
 // traverse object graph from given root object and set referenced flags
 // ----------------------------------------------------------------------------
-void mark_handle(HANDLE *h) {
-	if(IS_BIT(h->type, FLAG_REFERENCED)) {
-		SET_BIT(h->type, FLAG_REFERENCED);
+void mark_handle(HANDLE *handle) {
+	if(IS_BIT(handle->type, FLAG_REFERENCED)) {
+		SET_BIT(handle->type, FLAG_REFERENCED);
 
-		if(IS_BIT(h->type, TYPE_GROUP_CONTAINER)) {
-			array_map(mark_handle, h);
+		if(IS_BIT(handle->type, TYPE_GROUP_CONTAINER)) {
+			array_map(&mark_handle, handle);
 		}
 	}
 }

@@ -17,11 +17,11 @@ HANDLE *array_create(unsigned int size, unsigned int type) {
     return mem_alloc(sizeof(Array) + size * sizeof(HANDLE *), type);
 }
 
-void array_map(map_func func, HANDLE *handle) {
+void array_map(HANDLE_PROCESSOR map, HANDLE *handle) {
     Array *array = handle->data;
 
     for(int i=0; i < array->len; i++) {
-        (*func)(array->items[i]);
+        map(&array->items[i]);
     }
 }
 

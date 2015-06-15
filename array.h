@@ -7,9 +7,9 @@
 
 #include "memory.h"
 
-typedef void (*map_func)(HANDLE *);
+typedef void (*HANDLE_PROCESSOR)(HANDLE *);
 
-void array_create(unsigned int size, unsigned int type);
-void array_map(map_func func, HANDLE *handle);
+HANDLE *array_create(unsigned int size, unsigned int type);
+void array_map(HANDLE_PROCESSOR map, HANDLE *handle);
 
 #endif //WORM_ARRAY_H
