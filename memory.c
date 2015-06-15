@@ -63,15 +63,20 @@ void mark() {
 		mark_handle(*ref);
 	}
 
-	for(HANDLE *h=HW.handle_reserved_head; h != 0; h = h->next) {
+	HANDLE **prev = &HW.handle_reserved_head;
+
+	for(HANDLE *h=; h != 0; h = h->next) {
 		if(h->type & TYPE_MARKED > 0) {
 			// clear mark
 			h->type ^= TYPE_MARKED;
-
+			*prev = h;
+			prev = &(h->next);
 		} else {
-
+			h->next = HW.handle_free_head;
+			HW.handle_free_head = h;
 		}
 	}
+	*prev = 0;
 }
 
 void mark_handle(HANDLE *h) {
