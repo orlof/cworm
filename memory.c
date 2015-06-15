@@ -1,10 +1,12 @@
 #include <stdlib.h>
 #include "memory.h"
 
+#define HANDLE_COUNTER_LIMIT 100
 #define AVAILABLE_MEMORY HW.handle_start - HW.heap_free_start
 
 void init(unsigned int size) {
 	HW.mem = malloc(size);
+	HW.mem_end = HW.mem + size;
 	HW.sp = (void **) (HW.mem + size);
 }
 
@@ -21,17 +23,17 @@ HANDLE *alloc(unsigned int size, unsigned int type) {
 		free_memory();
 	}
 
-	if(HW.heap_counter-- == 0) {
+	if(HW.handle_counter-- == 0) {
 		// periodically recycle obsolete handles
 		mark();
 	}
 
 	// get recycled handle or allocate new
-	HANDLE *h = HW.heap_handle_free;
+	HANDLE *h = HW.handle_free_head;
 	if(h == 0) {
-		h = --HW.heap_handle_start;
+		h = --HW.handle_start;
 	} else {
-		HW.heap_handle_free = h->next;
+		HW.handle_free_head = h->next;
 	}
 
 	// initialize HANDLE
@@ -44,19 +46,31 @@ HANDLE *alloc(unsigned int size, unsigned int type) {
 	HW.heap_free_start += size;
 
 	// append HANDLE to reserved HANDLEs list
-	HW.heap_handle_tail->next = h;
-	HW.heap_handle_tail = h;
+	HW.handle_reserved_tail->next = h;
+	HW.handle_reserved_tail = h;
 
 	return h;
 }
 
 void mark() {
-	for(void **ref=HW.sp, **fp=*HW.sp; ref < MEM_END; ref++) {
+	HW.handle_counter = HANDLE_COUNTER_LIMIT;
+
+	for(void **ref=HW.sp, **fp=*HW.sp; ref < HW.mem_end; ref++) {
 		if(ref == fp) {
 			fp = *fp;
 			continue;
 		}
 		mark_handle(*ref);
+	}
+
+	for(HANDLE *h=HW.handle_reserved_head; h != 0; h = h->next) {
+		if(h->type & TYPE_MARKED > 0) {
+			// clear mark
+			h->type ^= TYPE_MARKED;
+
+		} else {
+
+		}
 	}
 }
 
