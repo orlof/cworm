@@ -12,8 +12,16 @@
 
 void init(unsigned int size) {
 	HW.mem = malloc(size);
-	HW.mem_end = HW.mem + size;
-	HW.sp = (void **) (HW.mem + size);
+
+	HW.heap_free_start  = HW.mem;
+	HW.mem_end          = HW.mem + size;
+	HW.sp               = (void **) (HW.mem + size);
+
+    HW.handle_free_head = 0;
+    HW.handle_resv_head = 0;
+    HW.handle_resv_tail = 0;
+    HW.handle_start     = 0;
+    HW.handle_counter   = HANDLE_COUNTER_LIMIT;
 }
 
 
@@ -121,10 +129,11 @@ void compact() {
 	HW.heap_free_start = HW.mem;
 
 	for(HANDLE *handle=HW.handle_resv_head; handle != 0; handle = handle->next) {
-		// we should optimize if src==dst
-        mem_copy(handle->data, handle->size, HW.heap_free_start, handle->size);
-
-		handle->data = HW.heap_free_start;
+		if(handle->data > HW.heap_free_start) {
+            // optimize if src==dst
+            mem_copy(handle->data, handle->size, HW.heap_free_start, handle->size);
+            handle->data = HW.heap_free_start;
+        }
         HW.heap_free_start += handle->size;
 	}
 }
