@@ -20,7 +20,8 @@ HANDLE *array_create(unsigned int size, unsigned int type) {
 void array_map(HANDLE_PROCESSOR map, HANDLE *handle) {
     Array *array = handle->data;
 
-    for(int i=0; i < array->len; i++) {
+    int i;
+    for(i=0; i < array->len; i++) {
         map(&array->items[i]);
     }
 }

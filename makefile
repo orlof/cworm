@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-I.
+CFLAGS=-I. -DDEBUG=1
 DEPS = memory.h minunit.h array.h interpreter.h
 OBJ = memory.o memory_test.o array.o interpreter.o
 

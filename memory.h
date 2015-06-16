@@ -48,21 +48,26 @@ struct handle {
 struct {
 	void **sp;
 	char *mem;
+	char *mem_free;
+	char *mem_handle;
+	char *mem_stack;
 	char *mem_end;
-	char *heap_free_start;
 	HANDLE *handle_free_head;
 	HANDLE *handle_resv_head;
 	HANDLE *handle_resv_tail;
-	HANDLE *handle_start;
 	unsigned int handle_counter;
 } HW;
 
-void init(unsigned int size);
+void mem_initialize(unsigned int heap_size, unsigned int stack_size);
 
-void push(void *ptr);
-void *pop();
+void call_stack_push(void *ptr);
+void *call_stack_pop();
 
 HANDLE * mem_alloc(unsigned int size, unsigned int type);
 void mem_realloc(HANDLE *handle, unsigned int size);
+
+void mem_copy(char *src, unsigned int src_len, char *dst, unsigned int dst_len);
+void mem_clear(char *start, unsigned int len);
+
 
 #endif //WORM_MEMORY_H

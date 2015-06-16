@@ -1,50 +1,88 @@
+#include <stdio.h>
 #include <stdlib.h>
 #include "memory.h"
 #include "array.h"
 #include "interpreter.h"
 
 #define HANDLE_COUNTER_LIMIT 100
-#define AVAILABLE_MEMORY (unsigned int) ((void *) HW.handle_start - (void *) HW.heap_free_start)
+#define AVAILABLE_MEMORY ((unsigned int) (HW.mem_handle - HW.mem_free))
 
 #define IS_BIT(val, mask) (((val) & (mask)) != 0)
 #define SET_BIT(val, bit) ((val) |= (bit))
 #define CLR_BIT(val, bit) ((val) &= (~(bit)))
 
-void init(unsigned int size) {
-	HW.mem = malloc(size);
+// ============================================================================
+// INITIALIZER
+// ============================================================================
+void mem_initialize(unsigned int heap_size, unsigned int stack_size) {
+    #ifdef DEBUG
+        printf("mem_initialize\n");
+    #endif
+	HW.mem = malloc(heap_size + stack_size);
 
-	HW.heap_free_start  = HW.mem;
-	HW.mem_end          = HW.mem + size;
-	HW.sp               = (void **) (HW.mem + size);
+	HW.mem_free         = HW.mem;
+    HW.mem_handle       = HW.mem + heap_size;
+    HW.mem_stack        = HW.mem + heap_size;
+	HW.mem_end          = HW.mem + heap_size + stack_size;
+
+	HW.sp               = (void **) HW.mem_end;
 
     HW.handle_free_head = 0;
     HW.handle_resv_head = 0;
     HW.handle_resv_tail = 0;
-    HW.handle_start     = 0;
     HW.handle_counter   = HANDLE_COUNTER_LIMIT;
 }
 
+void mem_destroy() {
+    free(HW.mem);
+}
 
-// ----------------------------------------------------------------------------
+// ============================================================================
+// GENERIC UTILITIES
+// ============================================================================
+void mem_copy(char *src, unsigned int src_len, char *dst, unsigned int dst_len) {
+    int i;
+    for(i=0; i < dst_len; i++) {
+        if(i < src_len) {
+            *dst++ = *src++;
+        } else {
+            *dst++ = 0;
+        }
+    }
+}
+
+void mem_clear(char *start, unsigned int len) {
+    int i;
+    for(i=0; i < len; i++) {
+        *start++ = 0;
+    }
+}
+
+
+// ============================================================================
 // CALL STACK
-// ----------------------------------------------------------------------------
-void push(void *ptr) {
+// ============================================================================
+void call_stack_push(void *ptr) {
+    if((void *) (HW.sp - 1) < (void *) HW.mem_stack) {
+        recover("Out of stack space\0");
+    }
+
 	*(--HW.sp) = ptr;
 }
 
-void *pop() {
+void *call_stack_pop() {
 	return *(HW.sp++);
 }
 
-// ----------------------------------------------------------------------------
+// ============================================================================
 // HEAP
-// ----------------------------------------------------------------------------
+// ============================================================================
 
 // ----------------------------------------------------------------------------
 // traverse object graph from given root object and set referenced flags
 // ----------------------------------------------------------------------------
 void mark_handle(HANDLE *handle) {
-	if(IS_BIT(handle->type, FLAG_REFERENCED)) {
+	if(!IS_BIT(handle->type, FLAG_REFERENCED)) {
 		SET_BIT(handle->type, FLAG_REFERENCED);
 
 		if(IS_BIT(handle->type, TYPE_GROUP_CONTAINER)) {
@@ -57,8 +95,9 @@ void mark_handle(HANDLE *handle) {
 // traverse all objects from call stack and set referenced flags
 // ----------------------------------------------------------------------------
 void mark_handles() {
-	for(void **ref=HW.sp; ref < (void **) HW.mem_end; ref++) {
-		if(*ref < HW.sp) {
+    void **ref;
+	for(ref = HW.sp; ref < (void **) HW.mem_end; ref++) {
+		if(*ref < (void *) HW.sp) {
 			// references always point to memory area below SP
 			// all other pointers are skipped as frame pointers
 			mark_handle(*ref);
@@ -76,16 +115,17 @@ void rebuild_handle_lists() {
 
     HW.handle_resv_tail = 0;
 
-    for(HANDLE *h=HW.handle_resv_head; h != 0; h = h->next) {
+    HANDLE *handle;
+    for(handle=HW.handle_resv_head; handle != 0; handle = handle->next) {
 		// which code branch to optimize?
-		if(IS_BIT(h->type, FLAG_REFERENCED)) {
-			CLR_BIT(h->type, FLAG_REFERENCED);
-			*resv = h;
-			resv = &(h->next);
-			HW.handle_resv_tail = h;
+		if(IS_BIT(handle->type, FLAG_REFERENCED)) {
+			CLR_BIT(handle->type, FLAG_REFERENCED);
+			*resv = handle;
+			resv = &(handle->next);
+			HW.handle_resv_tail = handle;
 		} else {
-			*free = h;
-			free = &(h->next);
+			*free = handle;
+			free = &(handle->next);
 		}
 	}
     *resv = 0;
@@ -93,10 +133,32 @@ void rebuild_handle_lists() {
 }
 
 // ----------------------------------------------------------------------------
+// allocate handle by recycling free handle or by expanding handle space
+// ----------------------------------------------------------------------------
+HANDLE *mem_allocate_handle() {
+    #ifdef DEBUG
+        printf("mem_allocate_handle\n");
+    #endif
+
+    if(HW.handle_free_head == 0) {
+        HW.mem_handle -= sizeof(HANDLE);
+        return (HANDLE *) HW.mem_handle;
+    } else {
+        HANDLE *handle = HW.handle_free_head;
+        HW.handle_free_head = handle->next;
+        return handle;
+    }
+}
+
+// ----------------------------------------------------------------------------
 // move handles that call stack does not reference anymore from reserved
 // handles list to free handles list
 // ----------------------------------------------------------------------------
-void mark() {
+void mem_unallocate_handles() {
+    #ifdef DEBUG
+        printf("mem_unallocate_handles\n");
+    #endif
+
 	// reset handle counter
 	HW.handle_counter = HANDLE_COUNTER_LIMIT;
 
@@ -104,37 +166,22 @@ void mark() {
     rebuild_handle_lists();
 }
 
-void mem_copy(char *src, unsigned int src_len, char *dst, unsigned int dst_len) {
-    for(int i=0; i < dst_len; i++) {
-        if(i < src_len) {
-            *dst++ = *src++;
-        } else {
-            *dst++ = 0;
-        }
-    }
-}
-
-void clear(char *start, unsigned int len) {
-    for(int i=0; i < len; i++) {
-        *start++ = 0;
-    }
-}
-
 // ----------------------------------------------------------------------------
 // iterate all handles in reserved handles list and compact the associated
 // data to the start of heap space
 //  - handles in reserved list and their data in heap are in same order
 // ----------------------------------------------------------------------------
-void compact() {
-	HW.heap_free_start = HW.mem;
+void mem_compact_heap() {
+	HW.mem_free = HW.mem;
 
-	for(HANDLE *handle=HW.handle_resv_head; handle != 0; handle = handle->next) {
-		if(handle->data > HW.heap_free_start) {
+    HANDLE *handle;
+	for(handle=HW.handle_resv_head; handle != 0; handle = handle->next) {
+		if(handle->data > (void *) HW.mem_free) {
             // optimize if src==dst
-            mem_copy(handle->data, handle->size, HW.heap_free_start, handle->size);
-            handle->data = HW.heap_free_start;
+            mem_copy(handle->data, handle->size, HW.mem_free, handle->size);
+            handle->data = HW.mem_free;
         }
-        HW.heap_free_start += handle->size;
+        HW.mem_free += handle->size;
 	}
 }
 
@@ -145,15 +192,19 @@ void compact() {
 //  - compact heap
 //  - clear free heap
 // ----------------------------------------------------------------------------
-void run_garbage_collector(unsigned int required_memory) {
-	mark();
-	compact();
+void mem_collect_garbage(unsigned int required_memory) {
+    #ifdef DEBUG
+        printf("mem_collect_garbage\n");
+    #endif
+
+	mem_unallocate_handles();
+	mem_compact_heap();
 
     if(AVAILABLE_MEMORY < required_memory) {
         recover("Out of memory\0");
     }
 
-	clear(HW.heap_free_start, AVAILABLE_MEMORY);
+	mem_clear(HW.mem_free, AVAILABLE_MEMORY);
 }
 
 void mem_realloc(HANDLE *handle, unsigned int size) {
@@ -163,49 +214,47 @@ void mem_realloc(HANDLE *handle, unsigned int size) {
     }
 
     if(AVAILABLE_MEMORY < size) {
-        run_garbage_collector(size);
+        mem_collect_garbage(size);
     }
 
-    mem_copy(handle->data, handle->size, HW.heap_free_start, size);
+    mem_copy(handle->data, handle->size, HW.mem_free, size);
 
-    handle->data = HW.heap_free_start;
-    HW.heap_free_start += size;
-}
-
-HANDLE *get_free_handle() {
-    if(HW.handle_free_head == 0) {
-        return --HW.handle_free_head;
-    } else {
-        HANDLE *handle = HW.handle_free_head;
-        HW.handle_free_head = handle->next;
-        return handle;
-    }
+    handle->data = HW.mem_free;
+    HW.mem_free += size;
 }
 
 HANDLE *mem_alloc(unsigned int size, unsigned int type) {
+    #ifdef DEBUG
+        printf("mem_alloc\n");
+    #endif
+
     if(AVAILABLE_MEMORY < size + sizeof(HANDLE)) {
-        run_garbage_collector((unsigned int) (size + sizeof(HANDLE)));
+        mem_collect_garbage((unsigned int) (size + sizeof(HANDLE)));
     }
 
     if(HW.handle_counter-- == 0) {
         // periodically recycle obsolete handles
-        mark();
+        mem_unallocate_handles();
     }
 
     // get recycled handle or allocate new
-    HANDLE *handle = get_free_handle();
+    HANDLE *handle = mem_allocate_handle();
 
     // initialize HANDLE
-    handle->data = HW.heap_free_start;
+    handle->data = HW.mem_free;
     handle->size = size;
     handle->type = type;
     handle->next = 0;
 
     // remove allocated space from free heap
-    HW.heap_free_start += size;
+    HW.mem_free += size;
 
     // append HANDLE to reserved HANDLEs list
-    HW.handle_resv_tail->next = handle;
+    if(HW.handle_resv_head == 0) {
+        HW.handle_resv_head = handle;
+    } else {
+        HW.handle_resv_tail->next = handle;
+    }
     HW.handle_resv_tail = handle;
 
     return handle;
