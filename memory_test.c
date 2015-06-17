@@ -1,35 +1,5 @@
-/* file minunit_example.c */
- 
-#include <stdio.h>
-#include <stdlib.h>
-#include "minunit.h"
-#include "memory.h"
-#include "array.h"
 
 #define MEM 80
-
-int tests_run = 0;
-
-int counter=0;
-void count(HANDLE *h) {
-    printf("CALLING\n");
-    counter++;
-}
-
-static char * test_array_create() {
-    mem_initialize(200, 100);
-    HANDLE *h1 = array_create(5, TYPE_LIST);
-
-    mu_assert("test_array_create 111", h1->size == sizeof(Array) + 5*sizeof(HANDLE *));
-    mu_assert("test_array_create 112", ((Array *) h1->data)->len == 5);
-
-    array_map(count, h1);
-
-    mu_assert("test_array_map 222", counter == 5);
-
-    mem_destroy();
-    return 0;
-}
 
 static char * test_mem_utilities() {
     char *mem = malloc(100);
@@ -231,24 +201,10 @@ static char * test_alloc() {
     return 0;
 }
 
-static char * all_tests() {
+static char * test_memory() {
     mu_run_test(test_mem_utilities);
     mu_run_test(test_call_stack);
     mu_run_test(test_alloc);
-    mu_run_test(test_array_create);
 
     return 0;
-}
-
-int main(int argc, char **argv) {
-    char *result = all_tests();
-    if (result != 0) {
-        printf("%s\n", result);
-    }
-    else {
-        printf("ALL TESTS PASSED\n");
-    }
-    printf("Tests run: %d\n", tests_run);
-
-    return result != 0;
 }

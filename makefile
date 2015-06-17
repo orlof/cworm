@@ -1,7 +1,7 @@
 CC=gcc
-CFLAGS=-I. -DDEBUG=1
-DEPS = memory.h minunit.h array.h interpreter.h
-OBJ = memory.o memory_test.o array.o interpreter.o
+CFLAGS=-I. -DDEBUG=1 -Wall
+DEPS = array.h interpreter.h memory.h minunit.h
+OBJ = array.o interpreter.o memory.o minunit.o 
 
 %.o: %.c $(DEPS)
 	$(CC) -c -o $@ $< $(CFLAGS)
