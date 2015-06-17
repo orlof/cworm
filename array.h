@@ -11,12 +11,12 @@ typedef struct Array Array;
 
 struct Array {
     unsigned int len;
-    HANDLE *items[];
+    REF ref[];
 };
 
-typedef void (*HANDLE_PROCESSOR)(HANDLE *);
+typedef void (*HANDLE_PROCESSOR)(REF);
 
-HANDLE *array_create(unsigned int size, unsigned int type);
-void array_map(HANDLE_PROCESSOR map, HANDLE *handle);
+REF array_create(unsigned int size, unsigned int type);
+void array_map(HANDLE_PROCESSOR map, REF ref);
 
 #endif //WORM_ARRAY_H

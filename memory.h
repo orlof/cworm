@@ -36,40 +36,50 @@
 #define TYPE_GROUP_NUMERIC          TYPE_GROUP_INTEGER | TYPE_FLOAT
 #define TYPE_GROUP_ALL              TYPE_SUBSCRIPTION | TYPE_TUPLE_COMMA | TYPE_NONE | TYPE_FLOAT | TYPE_INT | TYPE_BOOL | TYPE_STR | TYPE_TUPLE | TYPEL_LIST | TYPE_DICT
 
-typedef struct handle HANDLE;
+#define STACK_SIZE     1000
+#define HANDLES_SIZE  10000
+#define HEAP_SIZE    100000
 
-struct handle {
+typedef unsigned int REF;
+
+typedef struct Handle Handle;
+struct Handle {
 	void *data;
-	HANDLE *next;
+	REF next;
 	unsigned int type;
 	unsigned int size;
 };
 
 struct {
-	void **sp;
-	char *mem;
-	char *mem_free;
-	char *mem_handle;
-	char *mem_stack;
-	char *mem_end;
-	HANDLE *handle_free_head;
-	HANDLE *handle_resv_head;
-	HANDLE *handle_resv_tail;
-	unsigned int handle_counter;
-} HW;
+	unsigned int sp;
+	REF slot[STACK_SIZE];
+} STACK;
 
-void mem_initialize(unsigned int heap_size, unsigned int stack_size);
+struct {
+	REF resv_head;
+	REF resv_tail;
+	REF free_head;
+
+	Handle slot[HANDLES_SIZE];
+} HANDLES;
+
+struct {
+	char *free;
+	char mem[HEAP_SIZE];
+} HEAP;
+
+void mem_initialize();
 void mem_destroy();
 
-void call_stack_push(void *ptr);
-void *call_stack_pop();
+void call_stack_push(REF ref);
+REF call_stack_pop();
 
-HANDLE * mem_alloc(unsigned int size, unsigned int type);
-void mem_realloc(HANDLE *handle, unsigned int size);
+REF mem_alloc(unsigned int size, unsigned int type);
+void mem_realloc(REF ref, unsigned int size);
 
 void mem_copy(char *src, unsigned int src_len, char *dst, unsigned int dst_len);
 void mem_clear(char *start, unsigned int len);
 
-void mem_collect_garbage(unsigned int required_memory);
+void mem_collect_garbage();
 
 #endif //WORM_MEMORY_H

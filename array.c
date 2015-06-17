@@ -6,30 +6,36 @@
 #include "array.h"
 #include "memory.h"
 
-HANDLE *array_create(unsigned int size, unsigned int type) {
-    HANDLE *handle = mem_alloc((unsigned int) (sizeof(Array) + size * sizeof(HANDLE *)), type);
-    ((Array *) handle->data)->len = size;
-    return handle;
+#define SIZEOF(len) ((unsigned int) (sizeof(Array) + len * sizeof(REF)))
+
+REF array_create(unsigned int size, unsigned int type) {
+    REF ref = mem_alloc(SIZEOF(size), type);
+    ((Array *) HANDLES.slot[ref].data)->len = size;
+
+    return ref;
 }
 
-void array_map(HANDLE_PROCESSOR map, HANDLE *handle) {
-    Array *array = handle->data;
+void array_map(HANDLE_PROCESSOR map, REF ref) {
+    Array *array = HANDLES.slot[ref].data;
 
     int i;
     for(i=0; i < array->len; i++) {
-        map(array->items[i]);
+        map(array->ref[i]);
     }
 }
 
-HANDLE **array_get_item_ptr_by_index(HANDLE *handle, int index) {
+/*
+REF *array_get_item_ptr_by_index(REF ref, int index) {
+    Handle *handle = &HANDLES.slot[ref];
     Array *array = handle->data;
     if(index < 0) {
         index += array->len;
     }
 
     if(index < 0 || index >= array->len) {
-        return 0;
+        return HANDLES_SIZE;
     }
 
-    return &(array->items[index]);
+    return &(array->ref[index]);
 }
+*/
