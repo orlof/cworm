@@ -4,10 +4,32 @@
 #include <stdlib.h>
 #include "minunit.h"
 #include "memory.h"
+#include "array.h"
 
 #define MEM 80
 
 int tests_run = 0;
+
+int counter=0;
+void count(HANDLE *h) {
+    printf("CALLING\n");
+    counter++;
+}
+
+static char * test_array_create() {
+    mem_initialize(200, 100);
+    HANDLE *h1 = array_create(5, TYPE_LIST);
+
+    mu_assert("test_array_create 111", h1->size == sizeof(Array) + 5*sizeof(HANDLE *));
+    mu_assert("test_array_create 112", ((Array *) h1->data)->len == 5);
+
+    array_map(count, h1);
+
+    mu_assert("test_array_map 222", counter == 5);
+
+    mem_destroy();
+    return 0;
+}
 
 static char * test_mem_utilities() {
     char *mem = malloc(100);
@@ -77,44 +99,143 @@ static char * test_call_stack() {
 }
 
 static char * test_alloc() {
-    mem_initialize(60, 20);
-    HANDLE *h = mem_alloc(10, 5);
+    mem_initialize(200, 100);
+    HANDLE *h1 = mem_alloc(110, 1);
 
-    mu_assert("test_alloc 1", HW.mem_stack == (HW.mem_handle + sizeof(HANDLE)));
-    mu_assert("test_alloc 1.0", h == (HANDLE *) HW.mem_handle);
-    mu_assert("test_alloc 1.1", HW.mem + 10 == HW.mem_free);
-    mu_assert("test_alloc 1.2", HW.handle_resv_head == h);
-    mu_assert("test_alloc 1.3", HW.handle_resv_tail == h);
-    mu_assert("test_alloc 2", h->data == (void *) HW.mem);
-    mu_assert("test_alloc 3", h->size == 10);
-    mu_assert("test_alloc 4", h->type == 5);
-    mu_assert("test_alloc 5", h->next == 0);
+    mu_assert("test_alloc 111", HW.mem_free == HW.mem + 110);
+    mu_assert("test_alloc 112", HW.mem_handle == HW.mem + 200 - sizeof(HANDLE));
+    mu_assert("test_alloc 113", HW.mem_stack == HW.mem + 200);
+    mu_assert("test_alloc 114", HW.mem_end == HW.mem + 300);
 
-    HANDLE *h2 = mem_alloc(5, 5);
+    mu_assert("test_alloc 120", (void *) h1 == (void *) (HW.mem + 200 - sizeof(HANDLE)));
+    mu_assert("test_alloc 121", HW.handle_resv_head == h1);
+    mu_assert("test_alloc 122", HW.handle_resv_tail == h1);
+    mu_assert("test_alloc 123", HW.handle_free_head == 0);
 
-    mu_assert("test_alloc 21", HW.mem_stack == (HW.mem_handle + 2*sizeof(HANDLE)));
-    mu_assert("test_alloc 21.0", h2 == (HANDLE *) HW.mem_handle);
-    mu_assert("test_alloc 21.1", HW.mem + 15 == HW.mem_free);
-    mu_assert("test_alloc 21.2", HW.handle_resv_head == h);
-    mu_assert("test_alloc 21.3", HW.handle_resv_tail == h2);
-    mu_assert("test_alloc 22", h2->data == (void *) (HW.mem+10));
-    mu_assert("test_alloc 23", h2->size == 5);
-    mu_assert("test_alloc 24", h2->type == 5);
-    mu_assert("test_alloc 25", h2->next == 0);
-    mu_assert("test_alloc 25", h->next == h2);
+    mu_assert("test_alloc 130", h1->data == (void *) HW.mem);
+    mu_assert("test_alloc 131", h1->size == 110);
+    mu_assert("test_alloc 132", h1->type == 1);
+    mu_assert("test_alloc 133", h1->next == 0);
+
+    HANDLE *h2 = mem_alloc(5, 2);
+
+    mu_assert("test_alloc 211", HW.mem_free == HW.mem + 115);
+    mu_assert("test_alloc 212", HW.mem_handle == HW.mem + 200 - 2 * sizeof(HANDLE));
+    mu_assert("test_alloc 213", HW.mem_stack == HW.mem + 200);
+    mu_assert("test_alloc 214", HW.mem_end == HW.mem + 300);
+
+    mu_assert("test_alloc 2200", (void *) h1 == (void *) (HW.mem + 200 - sizeof(HANDLE)));
+    mu_assert("test_alloc 2201", (void *) h2 == (void *) (HW.mem + 200 - 2 * sizeof(HANDLE)));
+    mu_assert("test_alloc 221", HW.handle_resv_head == h1);
+    mu_assert("test_alloc 222", HW.handle_resv_tail == h2);
+    mu_assert("test_alloc 223", HW.handle_free_head == 0);
+
+    mu_assert("test_alloc 230", h1->data == (void *) HW.mem);
+    mu_assert("test_alloc 231", h1->size == 110);
+    mu_assert("test_alloc 232", h1->type == 1);
+    mu_assert("test_alloc 233", h1->next == h2);
+
+    mu_assert("test_alloc 240", h2->data == (void *) (HW.mem + 110));
+    mu_assert("test_alloc 241", h2->size == 5);
+    mu_assert("test_alloc 242", h2->type == 2);
+    mu_assert("test_alloc 243", h2->next == 0);
 
     call_stack_push(HW.sp);
     call_stack_push(h2);
     call_stack_push(HW.sp);
+
+    HANDLE *h3 = mem_alloc(120, 3);
+
+    mu_assert("test_alloc 311", HW.mem_free == HW.mem + 125);
+    mu_assert("test_alloc 312", HW.mem_handle == HW.mem + 200 - 2 * sizeof(HANDLE));
+    mu_assert("test_alloc 313", HW.mem_stack == HW.mem + 200);
+    mu_assert("test_alloc 314", HW.mem_end == HW.mem + 300);
+
+    mu_assert("test_alloc 3200", (void *) h3 == (void *) (HW.mem + 200 - sizeof(HANDLE)));
+    mu_assert("test_alloc 3201", (void *) h2 == (void *) (HW.mem + 200 - 2 * sizeof(HANDLE)));
+    mu_assert("test_alloc 321", HW.handle_resv_head == h2);
+    mu_assert("test_alloc 322", HW.handle_resv_tail == h3);
+    mu_assert("test_alloc 323", HW.handle_free_head == 0);
+
+    mu_assert("test_alloc 330", h3->data == (void *) (HW.mem + 5));
+    mu_assert("test_alloc 331", h3->size == 120);
+    mu_assert("test_alloc 332", h3->type == 3);
+    mu_assert("test_alloc 333", h3->next == 0);
+
+    mu_assert("test_alloc 340", h2->data == (void *) (HW.mem));
+    mu_assert("test_alloc 341", h2->size == 5);
+    mu_assert("test_alloc 342", h2->type == 2);
+    mu_assert("test_alloc 343", h2->next == h3);
+
+    mem_collect_garbage(0);
+
+    mu_assert("test_alloc 411", HW.mem_free == HW.mem + 5);
+    mu_assert("test_alloc 412", HW.mem_handle == HW.mem + 200 - 2 * sizeof(HANDLE));
+    mu_assert("test_alloc 413", HW.mem_stack == HW.mem + 200);
+    mu_assert("test_alloc 414", HW.mem_end == HW.mem + 300);
+
+    mu_assert("test_alloc 4201", (void *) h2 == (void *) (HW.mem + 200 - 2 * sizeof(HANDLE)));
+    mu_assert("test_alloc 421", HW.handle_resv_head == h2);
+    mu_assert("test_alloc 422", HW.handle_resv_tail == h2);
+    mu_assert("test_alloc 423", HW.handle_free_head == ((HANDLE *) (HW.mem + 200 - sizeof(HANDLE))));
+
+    mu_assert("test_alloc 433", ((HANDLE *) (HW.mem + 200 - sizeof(HANDLE)))->next == 0);
+
+    mu_assert("test_alloc 440", h2->data == (void *) (HW.mem));
+    mu_assert("test_alloc 441", h2->size == 5);
+    mu_assert("test_alloc 442", h2->type == 2);
+    mu_assert("test_alloc 443", h2->next == 0);
+
+    call_stack_pop();
+    call_stack_pop();
+    call_stack_pop();
+    mem_collect_garbage(0);
+
+    mu_assert("test_alloc 511", HW.mem_free == HW.mem);
+    mu_assert("test_alloc 512", HW.mem_handle == HW.mem + 200 - 2 * sizeof(HANDLE));
+    mu_assert("test_alloc 513", HW.mem_stack == HW.mem + 200);
+    mu_assert("test_alloc 514", HW.mem_end == HW.mem + 300);
+
+    mu_assert("test_alloc 521", HW.handle_resv_head == 0);
+    mu_assert("test_alloc 522", HW.handle_resv_tail == 0);
+    mu_assert("test_alloc 523", HW.handle_free_head == ((HANDLE *) (HW.mem + 200 - 2*sizeof(HANDLE))));
+
+    mu_assert("test_alloc 533", ((HANDLE *) (HW.mem + 200 - 2*sizeof(HANDLE)))->next == ((HANDLE *) (HW.mem + 200 - sizeof(HANDLE))));
+    mu_assert("test_alloc 534", ((HANDLE *) (HW.mem + 200 - sizeof(HANDLE)))->next == 0);
+
+    HANDLE *h4 = mem_alloc(5, 4);
+    HANDLE *h5 = mem_alloc(5, 5);
+
+    mu_assert("test_alloc 611", HW.mem_free == HW.mem+10);
+    mu_assert("test_alloc 612", HW.mem_handle == HW.mem + 200 - 2 * sizeof(HANDLE));
+
+    mu_assert("test_alloc 621", HW.handle_resv_head == h4);
+    mu_assert("test_alloc 622", HW.handle_resv_tail == h5);
+    mu_assert("test_alloc 623", HW.handle_free_head == 0);
+    mu_assert("test_alloc 631", h4->next == h5);
+    mu_assert("test_alloc 632", h5->next == 0);
+
+    HANDLE *h6 = mem_alloc(5, 6);
+
+    mu_assert("test_alloc 711", HW.mem_free == HW.mem+15);
+    mu_assert("test_alloc 712", HW.mem_handle == HW.mem + 200 - 3 * sizeof(HANDLE));
+
+    mu_assert("test_alloc 721", HW.handle_resv_head == h4);
+    mu_assert("test_alloc 722", HW.handle_resv_tail == h6);
+    mu_assert("test_alloc 723", HW.handle_free_head == 0);
+    mu_assert("test_alloc 731", h4->next == h5);
+    mu_assert("test_alloc 732", h5->next == h6);
+    mu_assert("test_alloc 732", h6->next == 0);
 
     mem_destroy();
     return 0;
 }
 
 static char * all_tests() {
-//    mu_run_test(test_mem_utilities);
-//    mu_run_test(test_call_stack);
+    mu_run_test(test_mem_utilities);
+    mu_run_test(test_call_stack);
     mu_run_test(test_alloc);
+    mu_run_test(test_array_create);
 
     return 0;
 }

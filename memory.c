@@ -110,13 +110,16 @@ void mark_handles() {
 // referenced -flag to free handles list
 // ----------------------------------------------------------------------------
 void rebuild_handle_lists() {
+    #ifdef DEBUG
+        printf("rebuild_handle_list\n");
+    #endif
     HANDLE **resv = &HW.handle_resv_head;
-    HANDLE **free = &HW.handle_free_head;
-
     HW.handle_resv_tail = 0;
 
-    HANDLE *handle;
-    for(handle=HW.handle_resv_head; handle != 0; handle = handle->next) {
+    HANDLE *handle, *next;
+    for(handle=HW.handle_resv_head; handle != 0; handle = next) {
+        next = handle->next;
+
 		// which code branch to optimize?
 		if(IS_BIT(handle->type, FLAG_REFERENCED)) {
 			CLR_BIT(handle->type, FLAG_REFERENCED);
@@ -124,12 +127,11 @@ void rebuild_handle_lists() {
 			resv = &(handle->next);
 			HW.handle_resv_tail = handle;
 		} else {
-			*free = handle;
-			free = &(handle->next);
+            handle->next = HW.handle_free_head;
+            HW.handle_free_head = handle;
 		}
 	}
     *resv = 0;
-    *free = 0;
 }
 
 // ----------------------------------------------------------------------------
@@ -223,6 +225,17 @@ void mem_realloc(HANDLE *handle, unsigned int size) {
     HW.mem_free += size;
 }
 
+void debug_list(HANDLE *h) {
+    while(h != 0) {
+        int next = 0;
+        if(h->next > 0) {
+            next = (int) (((void *) h->next) - ((void *) HW.mem));
+        }
+        printf("  %d (%d, %d, %d)\n", (int) (((void *) h) - ((void *) HW.mem)), h->size, h->type, next);
+        h = h->next;
+    }
+}
+
 HANDLE *mem_alloc(unsigned int size, unsigned int type) {
     #ifdef DEBUG
         printf("mem_alloc\n");
@@ -259,5 +272,4 @@ HANDLE *mem_alloc(unsigned int size, unsigned int type) {
 
     return handle;
 }
-
 

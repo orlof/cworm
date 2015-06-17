@@ -59,6 +59,7 @@ struct {
 } HW;
 
 void mem_initialize(unsigned int heap_size, unsigned int stack_size);
+void mem_destroy();
 
 void call_stack_push(void *ptr);
 void *call_stack_pop();
@@ -69,5 +70,6 @@ void mem_realloc(HANDLE *handle, unsigned int size);
 void mem_copy(char *src, unsigned int src_len, char *dst, unsigned int dst_len);
 void mem_clear(char *start, unsigned int len);
 
+void mem_collect_garbage(unsigned int required_memory);
 
 #endif //WORM_MEMORY_H

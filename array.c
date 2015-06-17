@@ -6,15 +6,10 @@
 #include "array.h"
 #include "memory.h"
 
-typedef struct Array Array;
-
-struct Array {
-    unsigned int len;
-    HANDLE items[];
-};
-
 HANDLE *array_create(unsigned int size, unsigned int type) {
-    return mem_alloc(sizeof(Array) + size * sizeof(HANDLE *), type);
+    HANDLE *handle = mem_alloc((unsigned int) (sizeof(Array) + size * sizeof(HANDLE *)), type);
+    ((Array *) handle->data)->len = size;
+    return handle;
 }
 
 void array_map(HANDLE_PROCESSOR map, HANDLE *handle) {
@@ -22,11 +17,11 @@ void array_map(HANDLE_PROCESSOR map, HANDLE *handle) {
 
     int i;
     for(i=0; i < array->len; i++) {
-        map(&array->items[i]);
+        map(array->items[i]);
     }
 }
 
-HANDLE *array_get_item_ptr_by_index(HANDLE *handle, int index) {
+HANDLE **array_get_item_ptr_by_index(HANDLE *handle, int index) {
     Array *array = handle->data;
     if(index < 0) {
         index += array->len;

@@ -7,6 +7,13 @@
 
 #include "memory.h"
 
+typedef struct Array Array;
+
+struct Array {
+    unsigned int len;
+    HANDLE *items[];
+};
+
 typedef void (*HANDLE_PROCESSOR)(HANDLE *);
 
 HANDLE *array_create(unsigned int size, unsigned int type);
