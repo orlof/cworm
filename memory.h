@@ -5,36 +5,39 @@
 #ifndef WORM_MEMORY_H
 #define WORM_MEMORY_H
 
-// SYSTEM TYPES
-#define FLAG_REFERENCED     0x8000
+typedef enum TYPE {
+    REFERENCED     = 0x8000;
+    VOID           = 0x4000;
+    CONTROL        = 0x2000;
+    EXTENSION      = 0x1000;
 
-#define TYPE_VOID           0x4000
-#define TYPE_CONTROL        0x2000
-#define TYPE_EXTENSION      0x1000
+    // INTERNAL SYSTEM TYPES
+    NAME           = 0x0800;
+    REFERENCE      = 0x0400;
+    SUBSCRIPTION   = 0x0200;
+    TUPLE_COMMA    = 0x0100;
 
-// INTERNAL SYSTEM TYPES
-#define TYPE_NAME           0x0800
-#define TYPE_REFERENCE      0x0400
-#define TYPE_SUBSCRIPTION   0x0200
-#define TYPE_TUPLE_COMMA    0x0100
+    //USER TYPES
+    NONE           = 0x0080;
+    FLOAT          = 0x0040;
+    INT            = 0x0020;
+    BOOL           = 0x0010;
 
-//USER TYPES
-#define TYPE_NONE           0x0080
-#define TYPE_FLOAT          0x0040
-#define TYPE_INT            0x0020
-#define TYPE_BOOL           0x0010
+    STR            = 0x0008;
+    TUPLE          = 0x0004;
+    LIST           = 0x0002;
+    DICT           = 0x0001;
+};
 
-#define TYPE_STR            0x0008
-#define TYPE_TUPLE          0x0004
-#define TYPE_LIST           0x0002
-#define TYPE_DICT           0x0001
 
-#define TYPE_GROUP_CONTAINER        TYPE_CONTROL | TYPE_TUPLE | TYPE_LIST | TYPE_DICT | TYPE_TUPLE_COMMA | TYPE_REFERENCE | TYPE_SUBSCRIPTION
-#define TYPE_GROUP_CAN_REFERENCE    TYPE_LIST | TYPE_DICT | TYPE_STR
-#define TYPE_GROUP_INTEGER          TYPE_INT | TYPE_BOOL
-#define TYPE_GROUP_NON_INTEGER      !TYPE_GROUP_INTEGER
-#define TYPE_GROUP_NUMERIC          TYPE_GROUP_INTEGER | TYPE_FLOAT
-#define TYPE_GROUP_ALL              TYPE_SUBSCRIPTION | TYPE_TUPLE_COMMA | TYPE_NONE | TYPE_FLOAT | TYPE_INT | TYPE_BOOL | TYPE_STR | TYPE_TUPLE | TYPEL_LIST | TYPE_DICT
+// TYPE TESTS
+
+#define IS_TYPE(value, type) ((type & value) != 0)
+#define IS_TYPE_CONTAINER(type) ((type & (TYPE.CONTROL | TYPE.TUPLE | TYPE.LIST | TYPE.DICT | TYPE.TUPLE_COMMA | TYPE.REFERENCE | TYPE.SUBSCRIPTION)) != 0)
+#define IS_TYPE_REFERENCE(type) ((type & (TYPE.LIST | TYPE.DICT | TYPE.STR)) != 0)
+#define IS_TYPE_INTEGER ((type & (TYPE.INT | TYPE.BOOL)) != 0)
+#define IS_NOT_TYPE_INTEGER ((type & (TYPE.INT | TYPE.BOOL)) == 0)
+#define IS_TYPE_NUMERIC ((type & (TYPE.INT | TYPE.BOOL | TYPE.FLOAT)) != 0)
 
 #define STACK_SIZE     1000
 #define HANDLES_SIZE  10000
