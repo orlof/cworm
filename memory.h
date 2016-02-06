@@ -42,6 +42,8 @@ typedef enum {
 #define HANDLES_SIZE  10000
 #define HEAP_SIZE    100000
 
+#define ILLEGAL_REF ((REF *) HANDLES_SIZE)
+
 typedef unsigned int REF;
 
 typedef struct Handle Handle;

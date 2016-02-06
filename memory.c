@@ -147,7 +147,7 @@ REF mem_allocate_handle() {
     #endif
 
     if(HANDLES.free_head == HANDLES_SIZE) {
-        recover("Out of handle space eror\0");
+        recover("Out of handle space error\0");
     }
 
     REF ref = HANDLES.free_head;
@@ -189,6 +189,7 @@ void mem_realloc(REF ref, unsigned int size) {
 
     mem_copy(handle->data, handle->size, HEAP.free, size);
 
+    handle->size = size;
     handle->data = HEAP.free;
     HEAP.free += size;
 }

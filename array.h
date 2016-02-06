@@ -11,6 +11,7 @@ typedef struct Array Array;
 
 struct Array {
     unsigned int len;
+    unsigned int capacity;
     REF ref[];
 };
 
@@ -18,5 +19,9 @@ typedef void (*CALLBACK)(REF);
 
 REF array_create(unsigned int size, FLAGS type);
 void array_map(CALLBACK map, REF ref);
+REF array_get(REF ref, int index);
+void array_set(REF ref, int index, REF value);
+void array_del(REF ref, int index);
+void array_append(REF ref, REF item);
 
 #endif //WORM_ARRAY_H
