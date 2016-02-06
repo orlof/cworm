@@ -8,14 +8,14 @@
 
 #define SIZEOF(len) ((unsigned int) (sizeof(Array) + len * sizeof(REF)))
 
-REF array_create(unsigned int size, unsigned int type) {
+REF array_create(unsigned int size, FLAGS type) {
     REF ref = mem_alloc(SIZEOF(size), type);
     ((Array *) HANDLES.slot[ref].data)->len = size;
 
     return ref;
 }
 
-void array_map(HANDLE_PROCESSOR map, REF ref) {
+void array_map(CALLBACK map, REF ref) {
     Array *array = HANDLES.slot[ref].data;
 
     int i;

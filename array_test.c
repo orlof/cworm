@@ -1,3 +1,7 @@
+#include <stdio.h>
+#include "minunit.h"
+#include "array.h"
+
 int counter=0;
 void count(REF ref) {
     printf("CALLING\n");
@@ -6,7 +10,7 @@ void count(REF ref) {
 
 static char * test_array_create() {
     mem_initialize();
-    REF ref1 = array_create(5, TYPE_LIST);
+    REF ref1 = array_create(5, LIST);
 
     Handle *h1 = &HANDLES.slot[ref1];
     mu_assert("test_array_create 111", h1->size == sizeof(Array) + 5*sizeof(REF));
@@ -20,7 +24,7 @@ static char * test_array_create() {
     return 0;
 }
 
-static char * test_array() {
+char * test_array() {
     mu_run_test(test_array_create);
 
     return 0;

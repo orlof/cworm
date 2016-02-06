@@ -19,7 +19,7 @@ void mem_initialize() {
     #endif
 
     // init handles
-    int i;
+    REF i;
     for(i = 0; i < HANDLES_SIZE; i++) {
         HANDLES.slot[i].next = i + 1;
     }
@@ -48,10 +48,9 @@ void mem_copy(char *src, unsigned int src_len, char *dst, unsigned int dst_len) 
     }
 }
 
-void mem_clear(char *start, unsigned int len) {
-    int i;
-    for(i=0; i < len; i++) {
-        *start++ = 0;
+void mem_clear(char *start, char *end) {
+    for(; start < end; start++) {
+        *start = 0;
     }
 }
 
@@ -81,10 +80,10 @@ REF call_stack_pop() {
 void mem_mark_handle(REF ref) {
     Handle *handle = &HANDLES.slot[ref];
     
-    if(!IS_BIT(handle->type, FLAG_REFERENCED)) {
-		SET_BIT(handle->type, FLAG_REFERENCED);
+    if(!IS_BIT(handle->flags, REFERENCED)) {
+		SET_BIT(handle->flags, REFERENCED);
 
-		if(IS_BIT(handle->type, TYPE_GROUP_CONTAINER)) {
+		if(IS_BIT(handle->flags, TYPE_CONTAINERS)) {
 			array_map(&mem_mark_handle, ref);
 		}
 	}
@@ -94,9 +93,9 @@ void mem_mark_handle(REF ref) {
 // traverse all objects from call stack and set referenced flags
 // ----------------------------------------------------------------------------
 void mem_mark() {
-    int i;
-    for(i = 0; i < STACK.sp; i++) {
-        mem_mark_handle(i);
+    unsigned int i;
+    for(i = STACK.sp; i < STACK_SIZE; i++) {
+        mem_mark_handle(STACK.slot[i]);
     }
 }
 
@@ -120,8 +119,8 @@ void mem_compact() {
         next = handle->next;
 
 		// which code branch to optimize?
-		if(IS_BIT(handle->type, FLAG_REFERENCED)) {
-			CLR_BIT(handle->type, FLAG_REFERENCED);
+		if(IS_BIT(handle->flags, REFERENCED)) {
+			CLR_BIT(handle->flags, REFERENCED);
 			*resv = ref;
 			resv = &handle->next;
 			HANDLES.resv_tail = ref;
@@ -142,18 +141,18 @@ void mem_compact() {
 // ----------------------------------------------------------------------------
 // allocate handle by recycling free handle or by expanding handle space
 // ----------------------------------------------------------------------------
-unsigned int mem_allocate_handle() {
+REF mem_allocate_handle() {
     #ifdef DEBUG
         printf("mem_allocate_handle\n");
     #endif
 
     if(HANDLES.free_head == HANDLES_SIZE) {
         recover("Out of handle space eror\0");
-    } else {
-        REF ref = HANDLES.free_head;
-        HANDLES.free_head = HANDLES.slot[ref].next;
-        return ref;
     }
+
+    REF ref = HANDLES.free_head;
+    HANDLES.free_head = HANDLES.slot[ref].next;
+    return ref;
 }
 
 // ----------------------------------------------------------------------------
@@ -171,7 +170,7 @@ void mem_collect_garbage() {
     mem_mark();
     mem_compact();
 
-	mem_clear(HEAP.free, AVAILABLE_MEMORY);
+	mem_clear(HEAP.free, HEAP.mem + HEAP_SIZE);
 }
 
 void mem_realloc(REF ref, unsigned int size) {
@@ -182,7 +181,7 @@ void mem_realloc(REF ref, unsigned int size) {
     }
 
     if(AVAILABLE_MEMORY < size) {
-        mem_collect_garbage(size);
+        mem_collect_garbage();
         if(AVAILABLE_MEMORY < size) {
             recover("Out of memory error\0");
         }
@@ -197,18 +196,18 @@ void mem_realloc(REF ref, unsigned int size) {
 void debug_list(REF ref) {
     while(ref != HANDLES_SIZE) {
         Handle *handle = &HANDLES.slot[ref];
-        printf("  [%d] {%d, %d, %d}\n", ref, handle->size, handle->type, handle->next);
+        printf("  [%d] {%d, %d, %d}\n", ref, handle->size, handle->flags, handle->next);
         ref = handle->next;
     }
 }
 
-REF mem_alloc(unsigned int size, unsigned int type) {
+REF mem_alloc(unsigned int size, FLAGS type) {
     #ifdef DEBUG
         printf("mem_alloc\n");
     #endif
 
     if(AVAILABLE_MEMORY < size) {
-        mem_collect_garbage(size);
+        mem_collect_garbage();
         if(AVAILABLE_MEMORY < size) {
             recover("Out of memory error\0");
         }
@@ -221,7 +220,7 @@ REF mem_alloc(unsigned int size, unsigned int type) {
     Handle *handle = &HANDLES.slot[ref];
     handle->data = HEAP.free;
     handle->size = size;
-    handle->type = type;
+    handle->flags = type;
     handle->next = HANDLES_SIZE;
 
     // remove allocated space from free heap

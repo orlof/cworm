@@ -14,9 +14,9 @@ struct Array {
     REF ref[];
 };
 
-typedef void (*HANDLE_PROCESSOR)(REF);
+typedef void (*CALLBACK)(REF);
 
-REF array_create(unsigned int size, unsigned int type);
-void array_map(HANDLE_PROCESSOR map, REF ref);
+REF array_create(unsigned int size, FLAGS type);
+void array_map(CALLBACK map, REF ref);
 
 #endif //WORM_ARRAY_H

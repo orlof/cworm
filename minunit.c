@@ -5,11 +5,10 @@
 #include "minunit.h"
 #include "memory.h"
 #include "array.h"
+#include "memory_test.h"
+#include "array_test.h"
 
 int tests_run = 0;
-
-#include "array_test.c"
-#include "memory_test.c"
 
 static char * all_tests() {
     mu_run_test(test_memory);
