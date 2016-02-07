@@ -38,7 +38,7 @@ typedef enum {
 
 #define IS_TYPE_INTEGER(type) ((type & (INT | BOOL)) != 0)
 #define IS_TYPE_FLOAT(type) ((type & (FLOAT)) != 0)
-#define IS_TYPE_LITERAL(type) ((type & (STRING | NAME)) != 0)
+#define IS_TYPE_LITERAL(type) ((type & (STR | NAME)) != 0)
 #define IS_TYPE_ARRAY(type) ((type & (TUPLE | LIST | DICT)) != 0)
 
 #define IS_NOT_TYPE_INTEGER ((type & (INT | BOOL)) == 0)

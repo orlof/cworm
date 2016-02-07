@@ -3,9 +3,10 @@
 //
 
 #ifndef WORM_STDUTIL_H
-
 #define WORM_STDUTIL_H
 
-int val_cmp(REF left, REF right);
+#include "memory.h"
+
+int val_cmp(REF lref, REF rref);
 
 #endif //WORM_STDUTIL_H

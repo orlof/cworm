@@ -1,5 +1,9 @@
 #include "memory.h"
 #include "stdutil.h"
+#include "array.h"
+#include "integer.h"
+#include "float.h"
+#include "string.h"
 
 int val_cmp(REF leftref, REF rightref) {
     if(leftref == rightref) {
@@ -15,6 +19,10 @@ int val_cmp(REF leftref, REF rightref) {
 
     if(IS_TYPE_INTEGER(leftflg) && IS_TYPE_INTEGER(rightflg)) {
         return int_cmp(leftref, rightref);
+    }
+
+    if(IS_TYPE_FLOAT(leftflg) && leftflg == rightflg) {
+        return float_cmp(leftflg, rightflg);
     }
 
     if(IS_TYPE_FLOAT(leftflg) && IS_TYPE_INTEGER(rightflg)) {
