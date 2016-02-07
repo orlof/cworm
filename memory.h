@@ -33,8 +33,14 @@ typedef enum {
 // TYPE TESTS
 
 #define TYPE_CONTAINERS (CONTROL | TUPLE | LIST | DICT | TUPLE_COMMA | REFERENCE | SUBSCRIPTION)
+
 #define IS_TYPE_REFERENCE(type) ((type & (LIST | DICT | STR)) != 0)
-#define IS_TYPE_INTEGER ((type & (INT | BOOL)) != 0)
+
+#define IS_TYPE_INTEGER(type) ((type & (INT | BOOL)) != 0)
+#define IS_TYPE_FLOAT(type) ((type & (FLOAT)) != 0)
+#define IS_TYPE_LITERAL(type) ((type & (STRING | NAME)) != 0)
+#define IS_TYPE_ARRAY(type) ((type & (TUPLE | LIST | DICT)) != 0)
+
 #define IS_NOT_TYPE_INTEGER ((type & (INT | BOOL)) == 0)
 #define IS_TYPE_NUMERIC ((type & (INT | BOOL | FLOAT)) != 0)
 
@@ -42,7 +48,7 @@ typedef enum {
 #define HANDLES_SIZE  10000
 #define HEAP_SIZE    100000
 
-#define ILLEGAL_REF ((REF *) HANDLES_SIZE)
+#define ILLEGAL_REF ((REF) HANDLES_SIZE)
 
 typedef unsigned int REF;
 

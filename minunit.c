@@ -1,12 +1,10 @@
 /* file minunit_example.c */
  
 #include <stdio.h>
-#include <stdlib.h>
 #include "minunit.h"
-#include "memory.h"
-#include "array.h"
 #include "memory_test.h"
 #include "array_test.h"
+#include "stdlib_test.h"
 
 int tests_run = 0;
 

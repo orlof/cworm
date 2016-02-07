@@ -1,4 +1,3 @@
-#include <stdio.h>
 #include "minunit.h"
 #include "array.h"
 
@@ -18,7 +17,7 @@ static char * test_array_create() {
     mu_assert("test_array_create 111", h1->size == sizeof(Array) + 5*sizeof(REF));
     mu_assert("test_array_create 112", ((Array *) h1->data)->len == 5);
 
-    array_map(count, ref1);
+    array_map(ref1, count);
 
     mu_assert("test_array_map 222", counter == 5);
 
@@ -83,11 +82,192 @@ static char * test_array_get() {
     return 0;
 }
 
+static char * test_array_insert() {
+    mem_initialize();
+    REF ref1 = array_create(3, LIST);
+
+    Array *arr1 = HANDLES.slot[ref1].data;
+    arr1->len = 0;
+
+    Handle *h1 = &HANDLES.slot[ref1];
+    array_insert(ref1, 0, 10);
+    array_insert(ref1, 1, 11);
+    array_insert(ref1, 2, 12);
+
+    Array *arr = HANDLES.slot[ref1].data;
+    mu_assert("test_array_insert*3 handle size", h1->size == sizeof(Array) + 3*sizeof(REF));
+    mu_assert("test_array insert*3 len and cap", arr->len==3 && arr->capacity == 3);
+    mu_assert("test_array_insert*3 items", arr->ref[0]==10 && arr->ref[1]==11 && arr->ref[2]==12);
+
+    array_insert(ref1, -1, 13);
+    arr = HANDLES.slot[ref1].data;
+    mu_assert("test_array_insert-1 handle size", h1->size == sizeof(Array) + 13*sizeof(REF));
+    mu_assert("test_array insert-1 len and cap", arr->len==4 && arr->capacity == 13);
+    mu_assert("test_array_insert-1 items", arr->ref[0]==10 && arr->ref[1]==11 && arr->ref[2]==13 && arr->ref[3]==12);
+
+    array_insert(ref1, -10, 14);
+    arr = HANDLES.slot[ref1].data;
+    mu_assert("test_array_insert-1 handle size", h1->size == sizeof(Array) + 13*sizeof(REF));
+    mu_assert("test_array insert-1 len and cap", arr->len==5 && arr->capacity == 13);
+    mu_assert("test_array_insert-1 items", arr->ref[0]==14 && arr->ref[1]==10 && arr->ref[2]==11 && arr->ref[3]==13 && arr->ref[4]==12);
+
+    array_insert(ref1, 10, 15);
+    arr = HANDLES.slot[ref1].data;
+    mu_assert("test_array_insert-1 handle size", h1->size == sizeof(Array) + 13*sizeof(REF));
+    mu_assert("test_array insert-1 len and cap", arr->len==6 && arr->capacity == 13);
+    mu_assert("test_array_insert-1 items", arr->ref[0]==14 && arr->ref[1]==10 && arr->ref[2]==11 && arr->ref[3]==13 && arr->ref[4]==12 && arr->ref[5]==15);
+
+    mem_destroy();
+    return 0;
+}
+
+static char * test_array_append_array() {
+    mem_initialize();
+    REF ref1 = array_create(3, LIST);
+    REF ref2 = array_create(3, LIST);
+
+    Array *arr1 = HANDLES.slot[ref1].data;
+    Array *arr2 = HANDLES.slot[ref2].data;
+    arr1->len = 0;
+    arr2->len = 0;
+
+    Handle *h1 = &HANDLES.slot[ref1];
+    array_append(ref1, 10);
+    array_append(ref1, 11);
+    array_append(ref2, 12);
+    array_append(ref2, 13);
+
+    array_append_array(ref1, ref2);
+
+    Array *arr = HANDLES.slot[ref1].data;
+    mu_assert("test_array_append_array handle size", h1->size == sizeof(Array) + 13*sizeof(REF));
+    mu_assert("test_array_append_array len and cap", arr->len==4 && arr->capacity == 13);
+    mu_assert("test_array_append_array items", arr->ref[0]==10 && arr->ref[1]==11 && arr->ref[2]==12 && arr->ref[3]==13);
+
+    mem_destroy();
+    return 0;
+}
+
+static char * test_array_split() {
+    mem_initialize();
+    REF ref1 = array_create(4, LIST);
+
+    array_set(ref1, 0, 10);
+    array_set(ref1, 1, 11);
+    array_set(ref1, 2, 12);
+    array_set(ref1, 3, 13);
+
+    REF ref2 = array_split(ref1, 0, 0);
+
+    Array *arr = HANDLES.slot[ref2].data;
+    mu_assert("test_array_split0 handle size", HANDLES.slot[ref2].size == sizeof(Array) + 0 * sizeof(REF));
+    mu_assert("test_array_split0 len and cap", arr->len==0 && arr->capacity == 0);
+    // mu_assert("test_array_split items", arr->ref[0]==10 && arr->ref[1]==11 && arr->ref[2]==12 && arr->ref[3]==13);
+
+    ref2 = array_split(ref1, 0, 4);
+    arr = HANDLES.slot[ref2].data;
+    mu_assert("test_array_split04 handle size", HANDLES.slot[ref2].size == sizeof(Array) + 4 * sizeof(REF));
+    mu_assert("test_array_split04 len and cap", arr->len==4 && arr->capacity == 4);
+    mu_assert("test_array_split04 items", arr->ref[0]==10 && arr->ref[1]==11 && arr->ref[2]==12 && arr->ref[3]==13);
+
+    ref2 = array_split(ref1, -2, -1);
+    arr = HANDLES.slot[ref2].data;
+    mu_assert("test_array_split-2-1 handle size", HANDLES.slot[ref2].size == sizeof(Array) + 1 * sizeof(REF));
+    mu_assert("test_array_split-2-1 len and cap", arr->len==1 && arr->capacity == 1);
+    mu_assert("test_array_split-2-1 items", arr->ref[0]==12);
+
+    ref2 = array_split(ref1, -1, 10);
+    arr = HANDLES.slot[ref2].data;
+    mu_assert("test_array_split-110 handle size", HANDLES.slot[ref2].size == sizeof(Array) + 1 * sizeof(REF));
+    mu_assert("test_array_split-110 len and cap", arr->len==1 && arr->capacity == 1);
+    mu_assert("test_array_split-110 items", arr->ref[0]==13);
+
+    mem_destroy();
+    return 0;
+}
+
+static char * test_array_merge() {
+    mem_initialize();
+    REF ref1 = array_create(2, LIST);
+    REF ref2 = array_create(2, LIST);
+
+    array_set(ref1, 0, 10);
+    array_set(ref1, 1, 11);
+
+    array_set(ref2, 0, 12);
+    array_set(ref2, 1, 13);
+
+    REF ref3 = array_merge(ref1, ref2);
+
+    Array *arr = HANDLES.slot[ref3].data;
+    mu_assert("test_array_merge handle size", HANDLES.slot[ref3].size == sizeof(Array) + 4 * sizeof(REF));
+    mu_assert("test_array_merge len and cap", arr->len==4 && arr->capacity == 4);
+    mu_assert("test_array_merge items", arr->ref[0]==10 && arr->ref[1]==11 && arr->ref[2]==12 && arr->ref[3]==13);
+
+    mem_destroy();
+    return 0;
+}
+
+static char * test_array_merge2() {
+    mem_initialize();
+    REF ref1 = array_create(0, LIST);
+    REF ref2 = array_create(0, LIST);
+
+    REF ref3 = array_merge(ref1, ref2);
+
+    Array *arr = HANDLES.slot[ref3].data;
+    mu_assert("test_array_merge handle size", HANDLES.slot[ref3].size == sizeof(Array) + 0 * sizeof(REF));
+    mu_assert("test_array_merge len and cap", arr->len==0 && arr->capacity == 0);
+
+    mem_destroy();
+    return 0;
+}
+
+static char * test_array_repeat() {
+    mem_initialize();
+    REF ref1 = array_create(2, LIST);
+
+    array_set(ref1, 0, 10);
+    array_set(ref1, 1, 11);
+
+    REF ref3 = array_repeat(ref1, 2);
+
+    Array *arr = HANDLES.slot[ref3].data;
+    mu_assert("test_array_merge handle size", HANDLES.slot[ref3].size == sizeof(Array) + 4 * sizeof(REF));
+    mu_assert("test_array_merge len and cap", arr->len==4 && arr->capacity == 4);
+    mu_assert("test_array_merge items", arr->ref[0]==10 && arr->ref[1]==11 && arr->ref[2]==10 && arr->ref[3]==11);
+
+    mem_destroy();
+    return 0;
+}
+
+static char * test_array_repeat2() {
+    mem_initialize();
+    REF ref1 = array_create(2, LIST);
+
+    array_set(ref1, 0, 10);
+    array_set(ref1, 1, 11);
+
+    REF ref3 = array_repeat(ref1, 0);
+
+    Array *arr = HANDLES.slot[ref3].data;
+    mu_assert("test_array_merge handle size", HANDLES.slot[ref3].size == sizeof(Array) + 0 * sizeof(REF));
+    mu_assert("test_array_merge len and cap", arr->len==0 && arr->capacity == 0);
+
+    mem_destroy();
+    return 0;
+}
 
 
 char * test_array() {
     mu_run_test(test_array_create);
     mu_run_test(test_array_get);
+    mu_run_test(test_array_insert);
+    mu_run_test(test_array_append_array);
+    mu_run_test(test_array_split);
+    mu_run_test(test_array_merge);
+    mu_run_test(test_array_merge2);
+    mu_run_test(test_array_repeat);
 
     return 0;
 }

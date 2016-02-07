@@ -1,5 +1,4 @@
 #include <stdio.h>
-#include <stdlib.h>
 #include "memory.h"
 #include "array.h"
 #include "interpreter.h"
@@ -84,7 +83,7 @@ void mem_mark_handle(REF ref) {
 		SET_BIT(handle->flags, REFERENCED);
 
 		if(IS_BIT(handle->flags, TYPE_CONTAINERS)) {
-			array_map(&mem_mark_handle, ref);
+			array_map(ref, &mem_mark_handle);
 		}
 	}
 }

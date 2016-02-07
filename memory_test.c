@@ -2,8 +2,6 @@
 #include "minunit.h"
 #include "memory.h"
 
-#define MEM 80
-
 static char * test_mem_utilities() {
     char *mem = malloc(100);
 
