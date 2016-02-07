@@ -1,5 +1,5 @@
 #include "memory.h"
-#include "stdlib.h"
+#include "stdutil.h"
 
 int val_cmp(REF leftref, REF rightref) {
     if(leftref == rightref) {

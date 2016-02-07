@@ -4,13 +4,14 @@
 #include "minunit.h"
 #include "memory_test.h"
 #include "array_test.h"
-#include "stdlib_test.h"
+#include "stdutil_test.h"
 
 int tests_run = 0;
 
 static char * all_tests() {
     mu_run_test(test_memory);
     mu_run_test(test_array);
+    mu_run_test(test_stdutil);
 
     return 0;
 }

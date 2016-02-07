@@ -4,7 +4,7 @@
 
 #include "array.h"
 #include "interpreter.h"
-#include "stdlib.h"
+#include "stdutil.h"
 
 #define SIZEOF(len) ((unsigned int) (sizeof(Array) + len * sizeof(REF)))
 
