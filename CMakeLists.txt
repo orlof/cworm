@@ -27,4 +27,4 @@ set(SOURCE_FILES
     string.c
     string.h)
 
-add_executable(worm ${SOURCE_FILES} float.c)
+add_executable(worm ${SOURCE_FILES} minunit.c)
