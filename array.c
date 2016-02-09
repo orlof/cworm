@@ -88,6 +88,18 @@ REF array_repeat(REF baseref, unsigned int mult) {
 
 // other
 
+int array_find(REF myref, REF item) {
+    Array *array = HANDLES.slot[myref].data;
+
+    for(int i=0; i < array->len; i++) {
+        if(val_cmp(item, array->ref[i]) == 0) {
+            return i;
+        }
+    }
+
+    return -1;
+}
+
 void array_map(REF myref, CALLBACK map) {
     Array *array = HANDLES.slot[myref].data;
 
@@ -191,6 +203,26 @@ void array_insert(REF myref, int index, REF item) {
     array->len++;
 
     array->ref[index] = item;
+}
+
+void array_sort(REF myref, int ascending) {
+    Array *array = HANDLES.slot[myref].data;
+    for(int i = 0; i < array->len; i++) {
+        int selected = i;
+
+        for(int j = i + 1; j < array->len; j++) {
+            if(ascending && val_cmp(array->ref[selected], array->ref[j]) == 1) {
+                selected = j;
+            }
+            if(!ascending && val_cmp(array->ref[selected], array->ref[j]) == -1) {
+                selected = j;
+            }
+        }
+
+        REF temp = array->ref[i];
+        array->ref[i] = array->ref[selected];
+        array->ref[selected] = temp;
+    }
 }
 
 // local functions

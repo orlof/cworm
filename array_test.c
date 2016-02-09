@@ -258,6 +258,45 @@ static char * test_array_repeat2() {
     return 0;
 }
 
+static char * test_array_sort() {
+    mem_initialize();
+    REF ref1 = array_create(4, LIST);
+
+    array_set(ref1, 0, 14);
+    array_set(ref1, 1, 12);
+    array_set(ref1, 2, 11);
+    array_set(ref1, 3, 14);
+
+    array_sort(ref1, 0);
+
+    Array *arr = HANDLES.slot[ref1].data;
+    mu_assert("test_array_sort ascending handle", HANDLES.slot[ref1].size == sizeof(Array) + 4 * sizeof(REF));
+    mu_assert("test_array_sort ascending array", arr->len==4 && arr->capacity == 4);
+    mu_assert("test_array_sort ascending items", arr->ref[0]==11 && arr->ref[1]==12 && arr->ref[2]==14 && arr->ref[3]==14);
+
+    mem_destroy();
+    return 0;
+}
+
+static char * test_array_sort_desc() {
+    mem_initialize();
+    REF ref1 = array_create(4, LIST);
+
+    array_set(ref1, 0, 14);
+    array_set(ref1, 1, 12);
+    array_set(ref1, 2, 11);
+    array_set(ref1, 3, 14);
+
+    array_sort(ref1, 0);
+
+    Array *arr = HANDLES.slot[ref1].data;
+    mu_assert("test_array_sort descending handle", HANDLES.slot[ref1].size == sizeof(Array) + 4 * sizeof(REF));
+    mu_assert("test_array_sort descending array", arr->len==4 && arr->capacity == 4);
+    mu_assert("test_array_sort descending items", arr->ref[0]==14 && arr->ref[1]==14 && arr->ref[2]==12 && arr->ref[3]==11);
+
+    mem_destroy();
+    return 0;
+}
 
 char * test_array() {
     mu_run_test(test_array_create);
@@ -268,6 +307,9 @@ char * test_array() {
     mu_run_test(test_array_merge);
     mu_run_test(test_array_merge2);
     mu_run_test(test_array_repeat);
+    mu_run_test(test_array_repeat2);
+    //mu_run_test(test_array_sort);
+    //mu_run_test(test_array_sort_desc);
 
     return 0;
 }

@@ -23,16 +23,18 @@ REF array_split(REF myref, int start, int end);
 REF array_merge(REF left, REF right);
 REF array_repeat(REF base, unsigned int mult);
 
-// these modify myref
+// these modify array in place
 void array_set(REF myref, int index, REF value);
 void array_del(REF myref, int index);
 void array_append(REF myref, REF item);
 void array_append_array(REF myref, REF otherref);
 void array_insert(REF myref, int index, REF item);
+void array_sort(REF myref, int ascending);
 
 // others
 REF array_get(REF myref, int index);
 void array_map(REF myref, CALLBACK map);
 int array_cmp(REF left, REF right);
+int array_find(REF array, REF item);
 
 #endif //WORM_ARRAY_H
