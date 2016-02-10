@@ -8,6 +8,8 @@ set(SOURCE_FILES
     array.h
     array_test.c
     array_test.h
+    dict.c
+    dict.h
     float.c
     float.h
     integer.c

@@ -78,6 +78,8 @@ struct {
 	char mem[HEAP_SIZE];
 } HEAP;
 
+REF current_scope;
+
 void mem_initialize();
 void mem_destroy();
 
